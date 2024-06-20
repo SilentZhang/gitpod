@@ -62,6 +62,7 @@ import { InstallationService } from "@gitpod/public-api/lib/gitpod/v1/installati
 import { RateLimitter } from "../rate-limitter";
 import { TokenServiceAPI } from "./token-service-api";
 import { TokenService } from "@gitpod/public-api/lib/gitpod/v1/token_connect";
+import { AuditLogService } from "../audit/AuditLogService";
 
 decorate(injectable(), PublicAPIConverter);
 
@@ -92,6 +93,7 @@ export class API {
     @inject(VerificationServiceAPI) private readonly verificationServiceApi: VerificationServiceAPI;
     @inject(InstallationServiceAPI) private readonly installationServiceApi: InstallationServiceAPI;
     @inject(RateLimitter) private readonly rateLimitter: RateLimitter;
+    @inject(AuditLogService) private readonly auditLogService: AuditLogService;
 
     listenPrivate(): http.Server {
         const app = express();
@@ -299,6 +301,17 @@ export class API {
                                 try {
                                     const promise = await apply<Promise<any>>();
                                     const result = await promise;
+                                    if (subjectId) {
+                                        try {
+                                            self.auditLogService.recordAuditLog(
+                                                subjectId!.userId()!,
+                                                requestContext.requestMethod,
+                                                args,
+                                            );
+                                        } catch (error) {
+                                            log.error("Failed to record audit log", error);
+                                        }
+                                    }
                                     done();
                                     return result;
                                 } catch (e) {

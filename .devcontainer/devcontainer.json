@@ -19,6 +19,7 @@
             "installDockerComposeSwitch": false
         }
     },
+    "onCreateCommand": "yarn && yarn build",
     "customizations": {
         "vscode": {
             "extensions": [
